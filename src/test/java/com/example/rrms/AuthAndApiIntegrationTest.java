@@ -1,0 +1,250 @@
+package com.example.rrms;
+
+import com.example.rrms.authsecurity.domain.enums.StaffType;
+import com.example.rrms.authsecurity.domain.enums.Role;
+import com.example.rrms.authsecurity.domain.modal.User;
+import com.example.rrms.authsecurity.dto.request.RegisterRequest;
+import com.example.rrms.authsecurity.dto.response.AuthResponse;
+import com.example.rrms.authsecurity.dto.request.LoginRequest;
+import com.example.rrms.authsecurity.dto.request.MfaVerifyRequest;
+import com.example.rrms.authsecurity.repository.UserRepository;
+import com.example.rrms.authsecurity.security.jwt.JwtService;
+import com.example.rrms.authsecurity.security.user.CustomUserDetailsService;
+import com.example.rrms.authsecurity.security.user.UserPrincipal;
+import com.example.rrms.authsecurity.service.AuthService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+@Transactional
+class AuthAndApiIntegrationTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private AuthService authService;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private JwtService jwtService;
+
+    @Autowired
+    private CustomUserDetailsService userDetailsService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Test
+    void testSuperAdminLoginAndMfaVerify() throws Exception {
+        // Step 1: Login returns MFA token
+        LoginRequest loginRequest = new LoginRequest("admin@rrms.com",  "Admin@RRMS12345");
+        AuthResponse loginResp = authService.login(loginRequest);
+
+        assertTrue(loginResp.mfaRequired());
+        assertNotNull(loginResp.mfaToken());
+
+        // Step 2: Verify MFA via Endpoint (even if Swagger sends Authorization header containing MFA token)
+        MfaVerifyRequest verifyRequest = new MfaVerifyRequest(loginResp.mfaToken(), "123456");
+
+        mockMvc.perform(post("/api/auth/mfa/verify")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + loginResp.mfaToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(verifyRequest)))
+                .andExpect(status().isOk());
+
+        // Step 3: Test GET /api/auth/me with valid access token
+        User admin = userRepository.findByEmailAndTenantIdIsNull("admin@rrms.com").orElseThrow();
+        UserPrincipal principal = userDetailsService.loadUserById(admin.getId());
+        String accessToken = jwtService.generateAccessToken(principal);
+
+        mockMvc.perform(get("/api/auth/me")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void testTokenParsingAndRoleAuthorities() {
+        User admin = userRepository.findByEmailAndTenantIdIsNull("admin@rrms.com").orElseThrow();
+        UserPrincipal principal = userDetailsService.loadUserById(admin.getId());
+
+        assertEquals(Role.SUPER_ADMIN, principal.getRole());
+        assertTrue(principal.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN")));
+        assertTrue(principal.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("TENANT_CREATE")));
+
+        String token = jwtService.generateAccessToken(principal);
+        assertNotNull(token);
+    }
+
+    @Test
+    void testRegisterAllRolesAndLogin() throws Exception {
+        // 1. Register Owner with a new resort
+        RegisterRequest ownerReg = new RegisterRequest(
+                Role.OWNER, "Royal Owner", "royal.owner@test.com", "Password@123", "+919876543210",
+                "ROYAL", "Royal Palm Resort", null
+        );
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(ownerReg)))
+                .andExpect(status().isOk());
+
+        // 2. Register Management under ROYAL
+        RegisterRequest mgrReg = new RegisterRequest(
+                Role.MANAGEMENT, "Royal Manager", "royal.mgr@test.com", "Password@123", "+919876543211",
+                "ROYAL", null, null
+        );
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(mgrReg)))
+                .andExpect(status().isOk());
+
+        // 3. Register Staff under ROYAL
+        RegisterRequest staffReg = new RegisterRequest(
+                Role.STAFF, "Royal Staff", "royal.staff@test.com", "Password@123", "+919876543212",
+                "ROYAL", null, StaffType.RECEPTIONIST
+        );
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(staffReg)))
+                .andExpect(status().isOk());
+
+        // 4. Register Guest under ROYAL
+        RegisterRequest guestReg = new RegisterRequest(
+                Role.GUEST, "Royal Guest", "royal.guest@test.com", "Password@123", "+919876543213",
+                "ROYAL", null, null
+        );
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(guestReg)))
+                .andExpect(status().isOk());
+
+        // 5. Register Super Admin
+        RegisterRequest adminReg = new RegisterRequest(
+                Role.SUPER_ADMIN, "Platform Admin 2", "admin2@rrms.com", "Admin@RRMS12345", "+919876543214",
+                null, null, null
+        );
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(adminReg)))
+                .andExpect(status().isOk());
+
+        // 6. Test Login as newly registered Guest with email and password ONLY (no tenant code)
+        LoginRequest guestLogin = new LoginRequest("royal.guest@test.com", "Password@123");
+        String guestRespJson = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(guestLogin)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        AuthResponse guestTokens = objectMapper.readValue(guestRespJson, AuthResponse.class);
+        assertNotNull(guestTokens.accessToken());
+
+        // 7. Verify /api/auth/me for Guest
+        mockMvc.perform(get("/api/auth/me")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + guestTokens.accessToken()))
+                .andExpect(status().isOk());
+
+        // 8. Test /api/auth/tenants endpoint
+        mockMvc.perform(get("/api/auth/tenants"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void testSuperAdminCreateTenantWithOwnerAndFetch() throws Exception {
+        User admin = userRepository.findByEmailAndTenantIdIsNull("admin@rrms.com").orElseThrow();
+        UserPrincipal principal = userDetailsService.loadUserById(admin.getId());
+        String adminToken = jwtService.generateAccessToken(principal);
+
+        // 1. Provision new Resort and Owner
+        com.example.rrms.authsecurity.dto.request.CreateTenantRequest req =
+                new com.example.rrms.authsecurity.dto.request.CreateTenantRequest(
+                        "OCEANIC", "Oceanic Bay Resort", "Captain Nemo", "nemo@oceanic.demo"
+                );
+
+        String createJson = mockMvc.perform(post("/api/platform/tenants")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        com.example.rrms.authsecurity.dto.response.CreatedUserResponse createdUser =
+                objectMapper.readValue(createJson, com.example.rrms.authsecurity.dto.response.CreatedUserResponse.class);
+        assertEquals("nemo@oceanic.demo", createdUser.email());
+        assertEquals(Role.OWNER, createdUser.role());
+        assertNotNull(createdUser.temporaryPassword());
+
+        // 2. Fetch all tenants - verify Oceanic Bay has Captain Nemo as primary owner
+        String tenantsJson = mockMvc.perform(get("/api/platform/tenants")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        java.util.List<com.example.rrms.authsecurity.dto.response.TenantResponse> tenantsList =
+                objectMapper.readValue(tenantsJson, new com.fasterxml.jackson.core.type.TypeReference<>() {});
+
+        var oceanic = tenantsList.stream().filter(t -> "OCEANIC".equals(t.code())).findFirst();
+        assertTrue(oceanic.isPresent());
+        assertEquals("Captain Nemo", oceanic.get().ownerName());
+        assertEquals("nemo@oceanic.demo", oceanic.get().ownerEmail());
+
+        // 3. Attempting to create duplicate tenant code returns 400 Bad Request with friendly error
+        mockMvc.perform(post("/api/platform/tenants")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testTenantUsersLoginWithEmailAndPasswordOnly() throws Exception {
+        // 1. Owner of PALM resort logs in with email and password only (no tenantCode)
+        LoginRequest ownerLogin = new LoginRequest("owner@rrms.demo", "Resort@123");
+        String ownerJson = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(ownerLogin)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        AuthResponse ownerResp = objectMapper.readValue(ownerJson, AuthResponse.class);
+        assertTrue(ownerResp.mfaRequired());
+        assertNotNull(ownerResp.mfaToken());
+
+        // Verify Owner MFA
+        MfaVerifyRequest ownerVerify = new MfaVerifyRequest(ownerResp.mfaToken(), "123456");
+        String verifiedJson = mockMvc.perform(post("/api/auth/mfa/verify")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(ownerVerify)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        AuthResponse verifiedResp = objectMapper.readValue(verifiedJson, AuthResponse.class);
+        assertNotNull(verifiedResp.accessToken());
+
+        // 2. Receptionist staff logs in with email and password only (direct tokens, no MFA)
+        LoginRequest staffLogin = new LoginRequest("receptionist@rrms.demo", "Resort@123");
+        String staffJson = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(staffLogin)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        AuthResponse staffResp = objectMapper.readValue(staffJson, AuthResponse.class);
+        assertNotNull(staffResp.accessToken());
+    }
+}
