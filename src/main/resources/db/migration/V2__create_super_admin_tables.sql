@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS super_admin.platform_tickets (
     creator_id UUID NOT NULL,
     assignee_id UUID,
     assignee_name VARCHAR(255),
+    assignee_email VARCHAR(255),
     title VARCHAR(255) NOT NULL,
     category VARCHAR(50) NOT NULL,
     priority VARCHAR(50) NOT NULL,
@@ -60,7 +61,8 @@ CREATE TABLE IF NOT EXISTS super_admin.ticket_attachments (
     file_name VARCHAR(255) NOT NULL,
     mime_type VARCHAR(100) NOT NULL,
     size_bytes BIGINT NOT NULL,
-    storage_key VARCHAR(500) NOT NULL,
+    data_url TEXT,
+    storage_key VARCHAR(500),
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_ticket_attachment_ticket FOREIGN KEY (ticket_id)
         REFERENCES super_admin.platform_tickets(id) ON DELETE CASCADE,

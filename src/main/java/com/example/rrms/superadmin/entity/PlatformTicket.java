@@ -63,6 +63,9 @@ public class PlatformTicket extends AuditableEntity {
     @Column(name = "assignee_name")
     private String assigneeName;
 
+    @Column(name = "assignee_email")
+    private String assigneeEmail;
+
     @Column(nullable = false)
     private String title;
 
@@ -123,17 +126,22 @@ public class PlatformTicket extends AuditableEntity {
         return ticket;
     }
 
-    public void assignAgent(UUID agentId, String agentName, String actorName, String actorRole) {
+    public void assignAgent(UUID agentId, String agentName, String agentEmail, String actorName, String actorRole) {
         this.assigneeId = agentId;
         this.assigneeName = agentName;
+        this.assigneeEmail = agentEmail;
         this.status = TicketStatus.IN_PROGRESS;
         String actor = actorName != null ? actorName : (agentName != null ? agentName : "SUPER_ADMIN");
         String role = actorRole != null ? actorRole : "SUPER_ADMIN";
         addHistoryEntry(actor, role, "AGENT_ASSIGNED", "Ticket assigned to " + agentName + "; status updated to IN_PROGRESS");
     }
 
+    public void assignAgent(UUID agentId, String agentName, String actorName, String actorRole) {
+        assignAgent(agentId, agentName, null, actorName, actorRole);
+    }
+
     public void assignAgent(UUID agentId, String agentName) {
-        assignAgent(agentId, agentName, agentName, "SUPER_ADMIN");
+        assignAgent(agentId, agentName, null, agentName, "SUPER_ADMIN");
     }
 
     public TicketReply addReply(UUID senderId, String senderName, String senderRole, String message) {
@@ -144,18 +152,26 @@ public class PlatformTicket extends AuditableEntity {
     }
 
     public TicketAttachment addAttachment(TicketReply reply, String fileName, String mimeType, long sizeBytes,
-                                          String storageKey, String actorName, String actorRole) {
-        TicketAttachment attachment = new TicketAttachment(this, reply, fileName, mimeType, sizeBytes, storageKey, Instant.now());
+                                          String storageKey, String dataUrl, String actorName, String actorRole) {
+        TicketAttachment attachment = new TicketAttachment(this, reply, fileName, mimeType, sizeBytes, storageKey, dataUrl, Instant.now());
         this.attachments.add(attachment);
+        if (reply != null) {
+            reply.addAttachment(attachment);
+        }
         String actor = actorName != null ? actorName : "USER";
         String role = actorRole != null ? actorRole : "USER";
         addHistoryEntry(actor, role, "ATTACHMENT_ADDED", "Attachment added: " + fileName);
         return attachment;
     }
 
+    public TicketAttachment addAttachment(TicketReply reply, String fileName, String mimeType, long sizeBytes,
+                                          String storageKey, String actorName, String actorRole) {
+        return addAttachment(reply, fileName, mimeType, sizeBytes, storageKey, null, actorName, actorRole);
+    }
+
     public TicketAttachment addAttachment(String fileName, String mimeType, long sizeBytes,
                                           String storageKey, String actorName, String actorRole) {
-        return addAttachment(null, fileName, mimeType, sizeBytes, storageKey, actorName, actorRole);
+        return addAttachment(null, fileName, mimeType, sizeBytes, storageKey, null, actorName, actorRole);
     }
 
     public void escalateToCritical(String actorName, String actorRole) {

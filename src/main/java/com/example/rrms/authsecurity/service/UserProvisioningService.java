@@ -65,6 +65,9 @@ public class UserProvisioningService {
         Tenant tenant = new Tenant();
         tenant.setCode(code);
         tenant.setName(createTenantRequest.resortName().trim());
+        tenant.setTier(createTenantRequest.tier() != null ? createTenantRequest.tier() : "STARTER");
+        tenant.setLocation(createTenantRequest.location() != null ? createTenantRequest.location().trim() : null);
+        tenant.setRoomsCount(createTenantRequest.roomsCount() != null ? createTenantRequest.roomsCount() : 0);
         tenant.setCreatedBy(creator.getId());
         tenant = tenantRepository.save(tenant);
 
@@ -97,14 +100,16 @@ public class UserProvisioningService {
         return tenantRepository.findAll().stream()
                 .map(tenant -> {
                     User owner = userRepository.findByTenantIdAndRole(tenant.getId(), Role.OWNER).stream().findFirst().orElse(null);
-                    TenantResponse base = modelMapper.map(tenant, TenantResponse.class);
                     return new TenantResponse(
-                            base.id(),
-                            base.code(),
-                            base.name(),
-                            base.status(),
-                            base.createdBy(),
-                            base.createdAt(),
+                            tenant.getId(),
+                            tenant.getCode(),
+                            tenant.getName(),
+                            tenant.getStatus(),
+                            tenant.getTier(),
+                            tenant.getLocation(),
+                            tenant.getRoomsCount(),
+                            tenant.getCreatedById(),
+                            tenant.getCreatedAt(),
                             owner != null ? owner.getId() : null,
                             owner != null ? owner.getName() : "Unassigned",
                             owner != null ? owner.getEmail() : "N/A",

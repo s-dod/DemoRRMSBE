@@ -11,6 +11,9 @@ public record TenantResponse(
         String code,
         String name,
         TenantStatus status,
+        String tier,
+        String location,
+        Integer roomsCount,
         UUID createdBy,
         Instant createdAt,
         UUID ownerId,
@@ -19,8 +22,12 @@ public record TenantResponse(
         String ownerPhone,
         UserStatus ownerStatus
 ) {
+    public TenantResponse(UUID id, String code, String name, TenantStatus status, String tier, String location, Integer roomsCount, UUID createdBy, Instant createdAt) {
+        this(id, code, name, status, tier, location, roomsCount, createdBy, createdAt, null, null, null, null, null);
+    }
+
     public TenantResponse(UUID id, String code, String name, TenantStatus status, UUID createdBy, Instant createdAt) {
-        this(id, code, name, status, createdBy, createdAt, null, null, null, null, null);
+        this(id, code, name, status, "STARTER", null, 0, createdBy, createdAt, null, null, null, null, null);
     }
 }
 

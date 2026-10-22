@@ -1,5 +1,6 @@
 package com.example.rrms.superadmin.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -36,28 +37,59 @@ public class TicketAttachment {
     private TicketReply reply;
 
     @Column(name = "file_name", nullable = false)
+    @JsonProperty("name")
     private String fileName;
 
     @Column(name = "mime_type", nullable = false, length = 100)
+    @JsonProperty("type")
     private String mimeType;
 
     @Column(name = "size_bytes", nullable = false)
+    @JsonProperty("size")
     private long sizeBytes;
 
-    @Column(name = "storage_key", nullable = false, length = 500)
+    @Column(name = "data_url", columnDefinition = "TEXT")
+    @JsonProperty("dataUrl")
+    private String dataUrl;
+
+    @Column(name = "storage_key", length = 500)
     private String storageKey;
 
     @Column(name = "created_at", nullable = false, updatable = false)
+    @JsonProperty("timestamp")
     private Instant createdAt = Instant.now();
 
-    TicketAttachment(PlatformTicket ticket, TicketReply reply, String fileName, String mimeType,
-                     long sizeBytes, String storageKey, Instant createdAt) {
+    public String getName() {
+        return fileName;
+    }
+
+    public String getType() {
+        return mimeType;
+    }
+
+    public long getSize() {
+        return sizeBytes;
+    }
+
+    public Instant getTimestamp() {
+        return createdAt;
+    }
+
+    public TicketAttachment(PlatformTicket ticket, TicketReply reply, String fileName, String mimeType,
+                            long sizeBytes, String storageKey, String dataUrl, Instant createdAt) {
         this.ticket = ticket;
         this.reply = reply;
-        this.fileName = fileName;
-        this.mimeType = mimeType;
+        this.fileName = fileName != null ? fileName : "attachment";
+        this.mimeType = mimeType != null ? mimeType : "application/octet-stream";
         this.sizeBytes = sizeBytes;
         this.storageKey = storageKey;
+        this.dataUrl = dataUrl;
         this.createdAt = createdAt != null ? createdAt : Instant.now();
     }
+
+    public TicketAttachment(PlatformTicket ticket, TicketReply reply, String fileName, String mimeType,
+                            long sizeBytes, String storageKey, Instant createdAt) {
+        this(ticket, reply, fileName, mimeType, sizeBytes, storageKey, null, createdAt);
+    }
 }
+

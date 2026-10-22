@@ -1,6 +1,7 @@
 package com.example.rrms.superadmin.entity;
 
 import com.example.rrms.superadmin.enums.AuditSeverity;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -55,7 +56,12 @@ public class PlatformAuditLog {
     private String ipAddress;
 
     @Column(name = "created_at", nullable = false, updatable = false)
+    @JsonProperty("timestamp")
     private Instant createdAt = Instant.now();
+
+    public Instant getTimestamp() {
+        return createdAt;
+    }
 
     public PlatformAuditLog(String actor, String action, String details, AuditSeverity severity,
                             String tenantCode, String ipAddress, Instant createdAt) {

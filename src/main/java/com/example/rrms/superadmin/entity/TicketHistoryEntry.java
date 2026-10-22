@@ -1,5 +1,6 @@
 package com.example.rrms.superadmin.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -44,9 +45,14 @@ public class TicketHistoryEntry {
     private String details;
 
     @Column(name = "created_at", nullable = false, updatable = false)
+    @JsonProperty("timestamp")
     private Instant createdAt = Instant.now();
 
-    TicketHistoryEntry(PlatformTicket ticket, String actorName, String actorRole, String action, String details, Instant createdAt) {
+    public Instant getTimestamp() {
+        return createdAt;
+    }
+
+    public TicketHistoryEntry(PlatformTicket ticket, String actorName, String actorRole, String action, String details, Instant createdAt) {
         this.ticket = ticket;
         this.actorName = actorName;
         this.actorRole = actorRole;

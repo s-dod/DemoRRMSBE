@@ -1,5 +1,6 @@
 package com.example.rrms.superadmin.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -51,7 +52,12 @@ public class SystemTelemetrySnapshot {
     private int apiRequestsPerMinute;
 
     @Column(name = "created_at", nullable = false, updatable = false)
+    @JsonProperty("timestamp")
     private Instant createdAt = Instant.now();
+
+    public Instant getTimestamp() {
+        return createdAt;
+    }
 
     public SystemTelemetrySnapshot(int activeTenants, int totalRoomsManaged, double cpuUsagePercent,
                                    double memoryUsagePercent, int openCriticalTickets,

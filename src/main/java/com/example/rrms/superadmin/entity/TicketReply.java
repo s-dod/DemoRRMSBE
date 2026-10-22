@@ -1,5 +1,7 @@
 package com.example.rrms.superadmin.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -9,12 +11,16 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -43,10 +49,28 @@ public class TicketReply {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String message;
 
+    @OneToMany(mappedBy = "reply", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<TicketAttachment> attachments = new ArrayList<>();
+
     @Column(name = "created_at", nullable = false, updatable = false)
+    @JsonProperty("timestamp")
     private Instant createdAt = Instant.now();
 
-    TicketReply(PlatformTicket ticket, UUID senderId, String senderName, String senderRole, String message, Instant createdAt) {
+    public Instant getTimestamp() {
+        return createdAt;
+    }
+
+    public List<TicketAttachment> getAttachments() {
+        return Collections.unmodifiableList(attachments);
+    }
+
+    public void addAttachment(TicketAttachment attachment) {
+        if (attachment != null) {
+            this.attachments.add(attachment);
+        }
+    }
+
+    public TicketReply(PlatformTicket ticket, UUID senderId, String senderName, String senderRole, String message, Instant createdAt) {
         this.ticket = ticket;
         this.senderId = senderId;
         this.senderName = senderName;
@@ -55,3 +79,4 @@ public class TicketReply {
         this.createdAt = createdAt != null ? createdAt : Instant.now();
     }
 }
+

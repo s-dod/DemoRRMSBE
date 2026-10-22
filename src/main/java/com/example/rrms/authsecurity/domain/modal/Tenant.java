@@ -33,6 +33,15 @@ public class Tenant {
     @Column(nullable = false)
     private TenantStatus status = TenantStatus.ACTIVE;
 
+    @Column(length = 50)
+    private String tier = "STARTER";
+
+    @Column(length = 255)
+    private String location;
+
+    @Column(name = "rooms_count")
+    private Integer roomsCount = 0;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", foreignKey = @ForeignKey(name = "fk_tenant_creator"))
     private User createdBy;
