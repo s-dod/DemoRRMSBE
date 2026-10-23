@@ -42,6 +42,18 @@ public class Tenant {
     @Column(name = "rooms_count")
     private Integer roomsCount = 0;
 
+    @Column(length = 255)
+    private String address;
+
+    @Column(length = 60)
+    private String city;
+
+    @Column(length = 60)
+    private String state;
+
+    @Column(length = 20)
+    private String phone;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", foreignKey = @ForeignKey(name = "fk_tenant_creator"))
     private User createdBy;

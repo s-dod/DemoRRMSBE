@@ -4,5 +4,5 @@ import com.example.rrms.superadmin.entity.PlatformConfig;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.UUID;
 
-public interface PlatformConfigRepository extends JpaRepository<PlatformConfig, UUID> {
+public interface PlatformConfigRepository extends JpaRepository<PlatformConfig, String> {
 }

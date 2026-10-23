@@ -95,6 +95,16 @@ public class AuthService {
     }
 
     @Transactional(noRollbackFor = AuthenticationException.class)
+    public AuthResponse superAdminLogin(LoginRequest loginRequest) {
+        User user = resolveUser(loginRequest);
+        if (user != null && user.getRole() != Role.SUPER_ADMIN) {
+            passwordEncoder.matches(loginRequest.password(), DUMMY_HASH);
+            throw new BadCredentialsException("Access denied. Super Admin privileges required.");
+        }
+        return login(loginRequest);
+    }
+
+    @Transactional(noRollbackFor = AuthenticationException.class)
     public AuthResponse verifyMfa(MfaVerifyRequest req) {
         Claims claims;
         try {

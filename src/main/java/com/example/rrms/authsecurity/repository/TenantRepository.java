@@ -9,4 +9,6 @@ import java.util.UUID;
 public interface TenantRepository extends JpaRepository<Tenant, UUID> {
     Optional<Tenant> findByCode(String code);
     boolean existsByCode(String code);
+    boolean existsByName(String name);
+    long countByStatus(com.example.rrms.authsecurity.domain.enums.TenantStatus status);
 }

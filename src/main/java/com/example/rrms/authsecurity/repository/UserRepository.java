@@ -40,4 +40,11 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     @Query("select count(u) > 0 from User u where lower(u.email) = lower(:email) and u.tenant is null")
     boolean existsByEmailAndTenantIdIsNull(@Param("email") String email);
+
+    List<User> findByRole(Role role);
+
+    long countByRole(Role role);
+
+    @Query("select u from User u where u.tenant.id = :tenantId and u.role = :role")
+    Optional<User> findFirstByTenantIdAndRole(@Param("tenantId") UUID tenantId, @Param("role") Role role);
 }
