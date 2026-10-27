@@ -9,7 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping({"/config", "/api/config"})
+@RequestMapping("/api/config")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('SUPER_ADMIN')")
 public class ConfigController {

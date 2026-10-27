@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping({"/api/auth", "/auth"})
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
@@ -31,11 +31,6 @@ public class AuthController {
     @PostMapping("/superadmin/login")
     public AuthResponse superAdminLogin(@Valid @RequestBody LoginRequest loginRequest) {
         return authService.superAdminLogin(loginRequest);
-    }
-
-    @PostMapping("/superadmin/mfa/verify")
-    public AuthResponse superAdminMfa(@Valid @RequestBody MfaVerifyRequest mfaVerifyRequest) {
-        return authService.verifyMfa(mfaVerifyRequest);
     }
 
     @PostMapping("/register")

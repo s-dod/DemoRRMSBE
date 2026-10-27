@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping({"/tickets", "/api/tickets"})
+@RequestMapping("/api/tickets")
 @RequiredArgsConstructor
 @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'OWNER', 'MANAGEMENT')")
 public class TicketController {
@@ -65,3 +65,5 @@ public class TicketController {
         return ResponseEntity.status(HttpStatus.CREATED).body(reply);
     }
 }
+
+

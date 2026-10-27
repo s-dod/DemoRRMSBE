@@ -50,7 +50,6 @@ public class SecurityConfig {
                 .authorizeHttpRequests(a -> a
                         .requestMatchers(
                                 "/api/auth/**",
-                                "/auth/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
@@ -60,24 +59,14 @@ public class SecurityConfig {
                         // ---- module (role) gates
                         .requestMatchers(
                                 "/api/platform/**",
-                                "/platform/**",
                                 "/api/tenants/**",
-                                "/tenants/**",
                                 "/api/owners/**",
-                                "/owners/**",
                                 "/api/overview/**",
-                                "/overview/**",
                                 "/api/config/**",
-                                "/config/**",
                                 "/api/audit/**",
-                                "/audit/**",
-                                "/api/monitoring/**",
-                                "/monitoring/**"
+                                "/api/monitoring/**"
                         ).hasRole("SUPER_ADMIN")
-                        .requestMatchers(
-                                "/api/tickets/**",
-                                "/tickets/**"
-                        ).hasAnyRole("SUPER_ADMIN", "OWNER", "MANAGEMENT")
+                        .requestMatchers("/api/tickets/**").hasAnyRole("SUPER_ADMIN", "OWNER", "MANAGEMENT")
                         .requestMatchers("/api/owner/**").hasAnyRole("OWNER", "MANAGEMENT")
                         .requestMatchers("/api/management/**").hasAnyRole("MANAGEMENT", "OWNER")
                         .requestMatchers("/api/staff/**").hasAnyRole("STAFF", "MANAGEMENT", "OWNER")

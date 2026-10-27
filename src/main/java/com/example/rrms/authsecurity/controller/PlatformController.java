@@ -26,7 +26,7 @@ public class PlatformController {
     }
 
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    @RequestMapping(value = "/tickets/{id}/status", method = {RequestMethod.PATCH, RequestMethod.PUT})
+    @PatchMapping("/tickets/{id}/status")
     public TechnicalTicketResponse updateTicketStatus(@PathVariable UUID id, @Valid @RequestBody UpdateTicketStatusRequest updateTicketStatusRequest) {
         return platformSupportService.updateTicketStatus(id, updateTicketStatusRequest);
     }
