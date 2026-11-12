@@ -68,11 +68,17 @@ public class TenantService {
         Tenant tenant = new Tenant();
         tenant.setCode(code);
         tenant.setName(req.resortName().trim());
+        tenant.setResortEmail(req.resortEmail() != null && !req.resortEmail().isBlank()
+                ? req.resortEmail().trim().toLowerCase()
+                : email);
         tenant.setAddress(req.address());
         tenant.setCity(req.city());
         tenant.setState(req.state());
         tenant.setPhone(req.resortPhone());
-        tenant.setLocation((req.city() != null ? req.city() : "") + (req.state() != null ? ", " + req.state() : ""));
+        String derivedLocation = (req.location() != null && !req.location().isBlank())
+                ? req.location().trim()
+                : ((req.city() != null ? req.city() : "") + (req.state() != null ? ", " + req.state() : ""));
+        tenant.setLocation(derivedLocation);
         tenant.setRoomsCount(req.roomsCount() != null ? req.roomsCount() : 0);
         tenant.setTier(req.tier() != null ? req.tier() : "STARTER");
         tenant.setStatus(TenantStatus.ACTIVE);
@@ -104,14 +110,22 @@ public class TenantService {
     @Transactional
     public TenantDetailResponse update(UUID id, UpdateTenantRequest req) {
         Tenant tenant = findOrThrow(id);
-        if (req.resortName() != null && !req.resortName().isBlank()) tenant.setName(req.resortName().trim());
+        String nextName = (req.name() != null && !req.name().isBlank()) ? req.name() : req.resortName();
+        if (nextName != null && !nextName.isBlank()) tenant.setName(nextName.trim());
         if (req.address() != null) tenant.setAddress(req.address().trim());
         if (req.city() != null)    tenant.setCity(req.city().trim());
         if (req.state() != null)   tenant.setState(req.state().trim());
         if (req.phone() != null)   tenant.setPhone(req.phone().trim());
+        if (req.resortEmail() != null && !req.resortEmail().isBlank()) {
+            tenant.setResortEmail(req.resortEmail().trim().toLowerCase());
+        }
         if (req.tier() != null)    tenant.setTier(req.tier().trim());
         if (req.roomsCount() != null) tenant.setRoomsCount(req.roomsCount());
-        tenant.setLocation((tenant.getCity() != null ? tenant.getCity() : "") + (tenant.getState() != null ? ", " + tenant.getState() : ""));
+        if (req.location() != null && !req.location().isBlank()) {
+            tenant.setLocation(req.location().trim());
+        } else if (req.city() != null || req.state() != null) {
+            tenant.setLocation((tenant.getCity() != null ? tenant.getCity() : "") + (tenant.getState() != null ? ", " + tenant.getState() : ""));
+        }
 
         tenant = tenantRepository.save(tenant);
 
@@ -168,15 +182,24 @@ public class TenantService {
 
     public TenantDetailResponse toResponse(Tenant t) {
         User owner = userRepository.findFirstByTenantIdAndRole(t.getId(), Role.OWNER).orElse(null);
+        String resolvedResortEmail = t.getResortEmail() != null && !t.getResortEmail().isBlank()
+                ? t.getResortEmail()
+                : (owner != null ? owner.getEmail() : null);
         return new TenantDetailResponse(
                 t.getId(),
-                t.getName(),
                 t.getCode(),
+                t.getName(),
+                t.getStatus(),
+                t.getTier(),
+                t.getLocation(),
+                t.getRoomsCount(),
+                resolvedResortEmail,
                 t.getAddress(),
                 t.getCity(),
                 t.getState(),
                 t.getPhone(),
-                t.getStatus(),
+                t.getCreatedById(),
+                owner != null ? owner.getId() : null,
                 owner != null ? owner.getName() : null,
                 owner != null ? owner.getEmail() : null,
                 owner != null ? owner.getPhone() : null,

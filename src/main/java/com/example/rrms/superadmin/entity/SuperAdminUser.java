@@ -1,6 +1,7 @@
 package com.example.rrms.superadmin.entity;
 
 import com.example.rrms.superadmin.enums.SuperAdminRole;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -39,6 +40,7 @@ public class SuperAdminUser extends AuditableEntity {
     @Column(nullable = false, unique = true)
     private String email;
 
+    @JsonIgnore
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
@@ -52,6 +54,7 @@ public class SuperAdminUser extends AuditableEntity {
     @Column(name = "mfa_required", nullable = false)
     private boolean mfaRequired = false;
 
+    @JsonIgnore
     @Column(name = "mfa_secret", length = 500)
     private String mfaSecret;
 
@@ -79,6 +82,10 @@ public class SuperAdminUser extends AuditableEntity {
         user.active = true;
         user.mfaRequired = false;
         return user;
+    }
+
+    public String getModule() {
+        return "SuperAdmin";
     }
 
     public void recordLogin() {

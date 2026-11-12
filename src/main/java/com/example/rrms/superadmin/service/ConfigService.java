@@ -35,6 +35,15 @@ public class ConfigService {
             config.updateSecuritySettings(enforceMfa, timeout);
         }
 
+        config.updateOperationalSettings(
+                req.registrationOpen(),
+                req.maxTenants(),
+                req.telemetryIntervalSeconds(),
+                req.backupSchedule(),
+                req.logRetentionDays(),
+                req.defaultTimezone()
+        );
+
         config = configRepository.save(config);
 
         auditService.record(

@@ -3,6 +3,7 @@ package com.example.rrms.authsecurity.domain.modal;
 import com.example.rrms.authsecurity.domain.enums.Role;
 import com.example.rrms.authsecurity.domain.enums.StaffType;
 import com.example.rrms.authsecurity.domain.enums.UserStatus;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -31,6 +32,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tenant_id", foreignKey = @ForeignKey(name = "fk_user_tenant"))
     private Tenant tenant; // null only for SUPER_ADMIN
@@ -41,6 +43,7 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
+    @JsonIgnore
     @Column(nullable = false)
     private String passwordHash; // BCrypt hash
 
@@ -57,10 +60,17 @@ public class User {
 
     private String phone;
 
+    @Column(length = 50)
+    private String shift;
+
+    @Column(name = "guest_id", length = 100)
+    private String guestId;
+
     private boolean mustChangePassword = true;
 
     private boolean mfaEnabled;
 
+    @JsonIgnore
     private String mfaSecret;
 
     private boolean mfaConfirmed;
@@ -71,12 +81,28 @@ public class User {
 
     private int tokenVersion = 0;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", foreignKey = @ForeignKey(name = "fk_user_creator"))
     private User createdBy;
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
+
+    public boolean isActive() {
+        return status == UserStatus.ACTIVE;
+    }
+
+    public String getModule() {
+        if (role == null) return null;
+        return switch (role) {
+            case SUPER_ADMIN -> "SuperAdmin";
+            case OWNER -> "Owner";
+            case MANAGEMENT -> "Management";
+            case STAFF -> "Staff";
+            case GUEST -> "Guest";
+        };
+    }
 
     public UUID getTenantId() {
         return tenant != null ? tenant.getId() : null;

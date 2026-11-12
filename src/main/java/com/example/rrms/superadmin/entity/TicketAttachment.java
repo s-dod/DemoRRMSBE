@@ -1,5 +1,6 @@
 package com.example.rrms.superadmin.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -28,10 +29,12 @@ public class TicketAttachment {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "ticket_id", nullable = false, foreignKey = @ForeignKey(name = "fk_ticket_attachment_ticket"))
     private PlatformTicket ticket;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reply_id", foreignKey = @ForeignKey(name = "fk_ticket_attachment_reply"))
     private TicketReply reply;

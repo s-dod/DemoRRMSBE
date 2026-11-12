@@ -74,6 +74,7 @@ public class MonitoringService {
         telemetryRepository.save(snapshot);
 
         return new TelemetryResponse(
+                snapshot.getId(),
                 activeTenants,
                 totalRooms,
                 cpuPercent,
@@ -106,6 +107,7 @@ public class MonitoringService {
         result.put("message", "Cluster nodes synchronized successfully.");
         result.put("nodesSynced", 3);
         result.put("syncedAt", now);
+        result.put("timestamp", now);
         result.put("clusterState", "HEALTHY");
         return result;
     }

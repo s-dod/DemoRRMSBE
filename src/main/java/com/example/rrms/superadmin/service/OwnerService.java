@@ -70,6 +70,15 @@ public class OwnerService {
 
         if (req.status() != null) {
             owner.setStatus(req.status());
+        } else if (req.active() != null) {
+            owner.setStatus(req.active() ? UserStatus.ACTIVE : UserStatus.INACTIVE);
+        }
+
+        if (req.password() != null && !req.password().isBlank()) {
+            owner.setPasswordHash(passwordEncoder.encode(req.password().trim()));
+            owner.setMustChangePassword(false);
+            owner.setTokenVersion(owner.getTokenVersion() + 1);
+            refreshTokenService.revokeAll(owner.getId());
         }
 
         owner = userRepository.save(owner);
@@ -139,6 +148,11 @@ public class OwnerService {
                 user.getEmail(),
                 user.getPhone(),
                 user.getStatus(),
+                user.isActive(),
+                user.getModule() != null ? user.getModule() : "Owner",
+                "Owner",
+                user.getCreatedById(),
+                user.getShift() != null ? user.getShift() : "",
                 user.getCreatedAt()
         );
     }

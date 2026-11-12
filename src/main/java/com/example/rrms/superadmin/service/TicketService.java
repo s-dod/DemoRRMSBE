@@ -4,12 +4,15 @@ import com.example.rrms.authsecurity.security.user.CurrentUser;
 import com.example.rrms.authsecurity.security.user.UserPrincipal;
 import com.example.rrms.common.exception.ApiException;
 import com.example.rrms.superadmin.DTO.request.CreateTicketRequest;
+import com.example.rrms.superadmin.DTO.request.TicketAttachmentInput;
 import com.example.rrms.superadmin.DTO.request.TicketReplyRequest;
 import com.example.rrms.superadmin.DTO.request.UpdateTicketRequest;
 import com.example.rrms.superadmin.DTO.response.TicketDetailResponse;
 import com.example.rrms.superadmin.DTO.response.TicketReplyResponse;
 import com.example.rrms.superadmin.DTO.response.TicketResponse;
 import com.example.rrms.superadmin.entity.PlatformTicket;
+import com.example.rrms.superadmin.entity.TicketAttachment;
+import com.example.rrms.superadmin.entity.TicketHistoryEntry;
 import com.example.rrms.superadmin.entity.TicketReply;
 import com.example.rrms.superadmin.enums.AuditSeverity;
 import com.example.rrms.superadmin.enums.TicketPriority;
@@ -77,6 +80,8 @@ public class TicketService {
                 req.description().trim()
         );
 
+        addAttachmentsToTicket(ticket, null, req.attachments(), ownerName, current.map(p -> p.getRole().name()).orElse("OWNER"));
+
         ticket = ticketRepository.save(ticket);
 
         auditService.record(
@@ -98,21 +103,25 @@ public class TicketService {
         String actor = current.map(UserPrincipal::getEmail).orElse("SUPER_ADMIN");
         String role = current.map(p -> p.getRole().name()).orElse("SUPER_ADMIN");
 
-        if (req.assigneeId() != null) {
+        if (req.assigneeId() != null || (req.assigneeName() != null && !req.assigneeName().isBlank())) {
             ticket.assignAgent(req.assigneeId(), req.assigneeName(), req.assigneeEmail(), actor, role);
         }
 
         if (req.priority() != null) {
-            if (req.priority() == TicketPriority.CRITICAL) {
-                ticket.escalateToCritical(actor, role);
-            }
+            ticket.updatePriority(req.priority(), actor, role);
+        }
+
+        if (req.resolutionNotes() != null) {
+            ticket.updateResolutionNotes(req.resolutionNotes().trim());
         }
 
         if (req.status() != null) {
             if (req.status() == TicketStatus.RESOLVED) {
-                ticket.resolve(req.resolutionNotes() != null ? req.resolutionNotes() : "Resolved by " + actor, actor, role);
+                ticket.resolve(req.resolutionNotes() != null ? req.resolutionNotes() : ticket.getResolutionNotes(), actor, role);
             } else if (req.status() == TicketStatus.CLOSED) {
                 ticket.close(actor, role);
+            } else {
+                ticket.updateStatus(req.status(), actor, role);
             }
         }
 
@@ -145,6 +154,10 @@ public class TicketService {
                 : current.map(p -> p.getRole().name()).orElse("SUPER_ADMIN");
 
         TicketReply reply = ticket.addReply(senderId, senderName, senderRole, req.message().trim());
+        List<TicketAttachmentInput> replyFiles = (req.replyAttachments() != null && !req.replyAttachments().isEmpty())
+                ? req.replyAttachments()
+                : req.attachments();
+        addAttachmentsToTicket(ticket, reply, replyFiles, senderName, senderRole);
         ticket = ticketRepository.save(ticket);
 
         auditService.record(
@@ -156,14 +169,27 @@ public class TicketService {
                 null
         );
 
-        return new TicketReplyResponse(
-                reply.getId(),
-                reply.getSenderId(),
-                reply.getSenderName(),
-                reply.getSenderRole(),
-                reply.getMessage(),
-                reply.getTimestamp()
-        );
+        return toReplyResponse(reply);
+    }
+
+    private void addAttachmentsToTicket(PlatformTicket ticket, TicketReply reply,
+                                        List<TicketAttachmentInput> inputs, String actorName, String actorRole) {
+        if (inputs == null || inputs.isEmpty()) {
+            return;
+        }
+        for (TicketAttachmentInput input : inputs) {
+            if (input == null) continue;
+            ticket.addAttachment(
+                    reply,
+                    input.name(),
+                    input.type(),
+                    input.size() != null ? input.size() : 0L,
+                    input.storageKey(),
+                    input.dataUrl(),
+                    actorName,
+                    actorRole
+            );
+        }
     }
 
     private PlatformTicket findTicketOrThrow(UUID id) {
@@ -178,13 +204,19 @@ public class TicketService {
                 ticket.getResortName(),
                 ticket.getOwnerName(),
                 ticket.getOwnerEmail(),
+                ticket.getCreatorId(),
+                ticket.getAssigneeId(),
+                ticket.getAssigneeName(),
+                ticket.getAssigneeEmail(),
                 ticket.getTitle(),
                 ticket.getCategory(),
                 ticket.getPriority(),
                 ticket.getStatus(),
-                ticket.getAssigneeId(),
-                ticket.getAssigneeName(),
                 ticket.getDescription(),
+                ticket.getResolutionNotes(),
+                ticket.getReplies().stream().map(this::toReplyResponse).collect(Collectors.toList()),
+                ticket.getAttachments().stream().map(this::toAttachmentResponse).collect(Collectors.toList()),
+                ticket.getHistory().stream().map(this::toHistoryResponse).collect(Collectors.toList()),
                 ticket.getCreatedAt(),
                 ticket.getUpdatedAt()
         );
@@ -192,37 +224,15 @@ public class TicketService {
 
     public TicketDetailResponse toDetailResponse(PlatformTicket ticket) {
         List<TicketReplyResponse> replies = ticket.getReplies().stream()
-                .map(r -> new TicketReplyResponse(
-                        r.getId(),
-                        r.getSenderId(),
-                        r.getSenderName(),
-                        r.getSenderRole(),
-                        r.getMessage(),
-                        r.getTimestamp()
-                ))
+                .map(this::toReplyResponse)
                 .collect(Collectors.toList());
 
         List<TicketDetailResponse.TicketAttachmentResponse> attachments = ticket.getAttachments().stream()
-                .map(a -> new TicketDetailResponse.TicketAttachmentResponse(
-                        a.getId(),
-                        a.getName(),
-                        a.getType(),
-                        a.getSize(),
-                        a.getStorageKey(),
-                        a.getDataUrl(),
-                        a.getTimestamp()
-                ))
+                .map(this::toAttachmentResponse)
                 .collect(Collectors.toList());
 
         List<TicketDetailResponse.TicketHistoryResponse> history = ticket.getHistory().stream()
-                .map(h -> new TicketDetailResponse.TicketHistoryResponse(
-                        h.getId(),
-                        h.getActorName(),
-                        h.getActorRole(),
-                        h.getAction(),
-                        h.getDetails(),
-                        h.getTimestamp()
-                ))
+                .map(this::toHistoryResponse)
                 .collect(Collectors.toList());
 
         return new TicketDetailResponse(
@@ -246,6 +256,41 @@ public class TicketService {
                 history,
                 ticket.getCreatedAt(),
                 ticket.getUpdatedAt()
+        );
+    }
+
+    private TicketReplyResponse toReplyResponse(TicketReply r) {
+        return new TicketReplyResponse(
+                r.getId(),
+                r.getSenderId(),
+                r.getSenderName(),
+                r.getSenderRole(),
+                r.getMessage(),
+                r.getAttachments().stream().map(this::toAttachmentResponse).collect(Collectors.toList()),
+                r.getTimestamp()
+        );
+    }
+
+    private TicketDetailResponse.TicketAttachmentResponse toAttachmentResponse(TicketAttachment a) {
+        return new TicketDetailResponse.TicketAttachmentResponse(
+                a.getId(),
+                a.getName(),
+                a.getType(),
+                a.getSize(),
+                a.getStorageKey(),
+                a.getDataUrl(),
+                a.getTimestamp()
+        );
+    }
+
+    private TicketDetailResponse.TicketHistoryResponse toHistoryResponse(TicketHistoryEntry h) {
+        return new TicketDetailResponse.TicketHistoryResponse(
+                h.getId(),
+                h.getActorName(),
+                h.getActorRole(),
+                h.getAction(),
+                h.getDetails(),
+                h.getTimestamp()
         );
     }
 }

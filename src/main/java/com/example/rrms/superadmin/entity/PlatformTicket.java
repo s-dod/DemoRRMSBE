@@ -175,14 +175,39 @@ public class PlatformTicket extends AuditableEntity {
     }
 
     public void escalateToCritical(String actorName, String actorRole) {
-        this.priority = TicketPriority.CRITICAL;
-        String actor = actorName != null ? actorName : "SUPER_ADMIN";
-        String role = actorRole != null ? actorRole : "SUPER_ADMIN";
-        addHistoryEntry(actor, role, "PRIORITY_ESCALATED", "Ticket priority escalated to CRITICAL");
+        updatePriority(TicketPriority.CRITICAL, actorName, actorRole);
     }
 
     public void escalateToCritical() {
         escalateToCritical("SUPER_ADMIN", "SUPER_ADMIN");
+    }
+
+    public void updatePriority(TicketPriority nextPriority, String actorName, String actorRole) {
+        if (nextPriority == null || this.priority == nextPriority) {
+            return;
+        }
+        TicketPriority oldPriority = this.priority;
+        this.priority = nextPriority;
+        String actor = actorName != null ? actorName : "SUPER_ADMIN";
+        String role = actorRole != null ? actorRole : "SUPER_ADMIN";
+        addHistoryEntry(actor, role, "PRIORITY_CHANGED", "Priority updated from " + oldPriority + " to " + nextPriority);
+    }
+
+    public void updateStatus(TicketStatus nextStatus, String actorName, String actorRole) {
+        if (nextStatus == null || this.status == nextStatus) {
+            return;
+        }
+        TicketStatus oldStatus = this.status;
+        this.status = nextStatus;
+        String actor = actorName != null ? actorName : "SUPER_ADMIN";
+        String role = actorRole != null ? actorRole : "SUPER_ADMIN";
+        addHistoryEntry(actor, role, "STATUS_CHANGED", "Status transitioned from " + oldStatus + " to " + nextStatus);
+    }
+
+    public void updateResolutionNotes(String resolutionNotes) {
+        if (resolutionNotes != null) {
+            this.resolutionNotes = resolutionNotes;
+        }
     }
 
     public void resolve(String resolutionNotes, String actorName, String actorRole) {

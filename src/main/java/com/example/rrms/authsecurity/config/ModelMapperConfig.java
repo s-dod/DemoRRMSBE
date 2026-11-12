@@ -28,8 +28,17 @@ public class ModelMapperConfig {
                     tenant.getCode(),
                     tenant.getName(),
                     tenant.getStatus(),
+                    tenant.getTier(),
+                    tenant.getLocation(),
+                    tenant.getRoomsCount(),
+                    tenant.getResortEmail(),
                     tenant.getCreatedById(),
-                    tenant.getCreatedAt()
+                    tenant.getCreatedAt(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
             );
         });
 

@@ -7,16 +7,29 @@ import java.util.UUID;
 
 public record TenantDetailResponse(
         UUID id,
-        String resortName,
-        String slug,
+        String code,
+        String name,
+        TenantStatus status,
+        String tier,
+        String location,
+        Integer roomsCount,
+        String resortEmail,
         String address,
         String city,
         String state,
         String phone,
-        TenantStatus status,
+        UUID createdBy,
+        UUID ownerId,
         String ownerName,
         String ownerEmail,
         String ownerPhone,
         Instant createdAt
 ) {
+    public String getResortName() {
+        return name;
+    }
+
+    public String getSlug() {
+        return code;
+    }
 }

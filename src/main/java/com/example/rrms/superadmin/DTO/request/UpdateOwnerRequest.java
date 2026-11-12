@@ -15,6 +15,11 @@ public record UpdateOwnerRequest(
         @Pattern(regexp = "^[6-9]\\d{9}$", message = "Invalid mobile number")
         String phone,
 
-        UserStatus status
+        UserStatus status,
+
+        Boolean active,
+
+        @Size(min = 6, max = 64, message = "Password must be between 6 and 64 characters")
+        String password
 ) {
 }

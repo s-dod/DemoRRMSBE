@@ -40,6 +40,8 @@ public record CreateTenantRequest(
 
         String tenantCode,
         String tier,
-        Integer roomsCount
+        Integer roomsCount,
+        String location,
+        String resortEmail
 ) {
 }

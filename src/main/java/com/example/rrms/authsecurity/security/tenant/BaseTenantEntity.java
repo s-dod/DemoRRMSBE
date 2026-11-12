@@ -1,6 +1,7 @@
 package com.example.rrms.authsecurity.security.tenant;
 
 import com.example.rrms.authsecurity.domain.modal.Tenant;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,6 +24,7 @@ public abstract class BaseTenantEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tenant_id", nullable = false, updatable = false)
     private Tenant tenant;

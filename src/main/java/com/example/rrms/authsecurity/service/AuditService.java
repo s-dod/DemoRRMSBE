@@ -23,6 +23,7 @@ public class AuditService {
         AuditLog auditLog = new AuditLog();
         auditLog.setTenantId(actor.getTenantId());
         auditLog.setActorId(actor.getId());
+        auditLog.setActor(actor.getEmail());
         auditLog.setActorRole(actor.getRole().name());
         auditLog.setActorStaffType(actor.getStaffType() == null ? null : actor.getStaffType().name());
         fill(auditLog, action, resourceType, resourceId, result, details);
@@ -34,6 +35,7 @@ public class AuditService {
         AuditLog auditLog = new AuditLog();
         auditLog.setTenantId(actor.getTenantId());
         auditLog.setActorId(actor.getId());
+        auditLog.setActor(actor.getName() != null ? actor.getName() : actor.getEmail());
         auditLog.setActorRole(actor.getRole().name());
         auditLog.setActorStaffType(actor.getStaffType() == null ? null : actor.getStaffType().name());
         fill(auditLog, action, resourceType, resourceId == null ? null : resourceId.toString(), result, details);

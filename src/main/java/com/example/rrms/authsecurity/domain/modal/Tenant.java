@@ -1,6 +1,7 @@
 package com.example.rrms.authsecurity.domain.modal;
 
 import com.example.rrms.authsecurity.domain.enums.TenantStatus;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -54,6 +55,10 @@ public class Tenant {
     @Column(length = 20)
     private String phone;
 
+    @Column(name = "resort_email", length = 255)
+    private String resortEmail;
+
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", foreignKey = @ForeignKey(name = "fk_tenant_creator"))
     private User createdBy;

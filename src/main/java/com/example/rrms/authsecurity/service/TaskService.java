@@ -39,6 +39,13 @@ public class TaskService {
         modelMapper.map(createTaskRequest, task);
         task.setTenantId(tenantId);
         task.setCreatedBy(userPrincipal.getId());
+        if (createTaskRequest.priority() != null && !createTaskRequest.priority().isBlank()) {
+            task.setPriority(createTaskRequest.priority().trim());
+        }
+        if (createTaskRequest.roomId() != null) task.setRoomId(createTaskRequest.roomId());
+        if (createTaskRequest.deadline() != null) task.setDeadline(createTaskRequest.deadline());
+        if (createTaskRequest.notes() != null) task.setNotes(createTaskRequest.notes());
+        if (createTaskRequest.kind() != null) task.setKind(createTaskRequest.kind());
 
         if (createTaskRequest.assignedStaffId() != null) {
             User staff = userRepository.findByIdAndTenantId(createTaskRequest.assignedStaffId(), tenantId)

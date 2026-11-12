@@ -78,4 +78,36 @@ public class PlatformConfig extends AuditableEntity {
         this.enforceMfa = enforceMfa;
         this.sessionTimeoutMinutes = sessionTimeoutMinutes;
     }
+
+    public void updateOperationalSettings(Boolean registrationOpen, Integer maxTenants,
+                                          Integer telemetryIntervalSeconds, String backupSchedule,
+                                          Integer logRetentionDays, String defaultTimezone) {
+        if (registrationOpen != null) {
+            this.registrationOpen = registrationOpen;
+        }
+        if (maxTenants != null) {
+            if (maxTenants < 1) {
+                throw ApiException.badRequest("INVALID_MAX_TENANTS", "Max tenants must be at least 1");
+            }
+            this.maxTenants = maxTenants;
+        }
+        if (telemetryIntervalSeconds != null) {
+            if (telemetryIntervalSeconds < 5) {
+                throw ApiException.badRequest("INVALID_TELEMETRY_INTERVAL", "Telemetry interval must be at least 5 seconds");
+            }
+            this.telemetryIntervalSeconds = telemetryIntervalSeconds;
+        }
+        if (backupSchedule != null && !backupSchedule.isBlank()) {
+            this.backupSchedule = backupSchedule.trim();
+        }
+        if (logRetentionDays != null) {
+            if (logRetentionDays < 1) {
+                throw ApiException.badRequest("INVALID_LOG_RETENTION", "Log retention days must be at least 1");
+            }
+            this.logRetentionDays = logRetentionDays;
+        }
+        if (defaultTimezone != null && !defaultTimezone.isBlank()) {
+            this.defaultTimezone = defaultTimezone.trim();
+        }
+    }
 }

@@ -7,6 +7,9 @@ public record UpdateTenantRequest(
         @Size(max = 100)
         String resortName,
 
+        @Size(max = 100)
+        String name,
+
         @Size(max = 255)
         String address,
 
@@ -16,8 +19,14 @@ public record UpdateTenantRequest(
         @Size(max = 60)
         String state,
 
+        @Size(max = 255)
+        String location,
+
         @Pattern(regexp = "^[6-9]\\d{9}$", message = "Invalid mobile number")
         String phone,
+
+        @jakarta.validation.constraints.Email(message = "Invalid email format")
+        String resortEmail,
 
         String tier,
         Integer roomsCount

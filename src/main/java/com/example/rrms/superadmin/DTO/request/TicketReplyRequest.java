@@ -2,6 +2,7 @@ package com.example.rrms.superadmin.DTO.request;
 
 import jakarta.validation.constraints.NotBlank;
 
+import java.util.List;
 import java.util.UUID;
 
 public record TicketReplyRequest(
@@ -10,6 +11,11 @@ public record TicketReplyRequest(
 
         UUID senderId,
         String senderName,
-        String senderRole
+        String senderRole,
+        List<TicketAttachmentInput> attachments,
+        List<TicketAttachmentInput> replyAttachments
 ) {
+    public TicketReplyRequest(String message, UUID senderId, String senderName, String senderRole) {
+        this(message, senderId, senderName, senderRole, List.of(), List.of());
+    }
 }

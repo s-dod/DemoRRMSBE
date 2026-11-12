@@ -65,6 +65,9 @@ public class UserProvisioningService {
         Tenant tenant = new Tenant();
         tenant.setCode(code);
         tenant.setName(createTenantRequest.resortName().trim());
+        tenant.setResortEmail(createTenantRequest.resortEmail() != null && !createTenantRequest.resortEmail().isBlank()
+                ? createTenantRequest.resortEmail().trim().toLowerCase()
+                : email);
         tenant.setTier(createTenantRequest.tier() != null ? createTenantRequest.tier() : "STARTER");
         tenant.setLocation(createTenantRequest.location() != null ? createTenantRequest.location().trim() : null);
         tenant.setRoomsCount(createTenantRequest.roomsCount() != null ? createTenantRequest.roomsCount() : 0);
@@ -108,6 +111,7 @@ public class UserProvisioningService {
                             tenant.getTier(),
                             tenant.getLocation(),
                             tenant.getRoomsCount(),
+                            tenant.getResortEmail() != null ? tenant.getResortEmail() : (owner != null ? owner.getEmail() : null),
                             tenant.getCreatedById(),
                             tenant.getCreatedAt(),
                             owner != null ? owner.getId() : null,

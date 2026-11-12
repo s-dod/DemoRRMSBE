@@ -33,7 +33,20 @@ public class AuditLog {
     private String result;
      private String details;
      private String ip;
+     private String actor;
 
      @Column(nullable = false,updatable = false)
     private Instant createdAt = Instant.now();
+
+    public Instant getDate() {
+        return createdAt;
+    }
+
+    public String getRole() {
+        return actorRole;
+    }
+
+    public String getDetail() {
+        return details;
+    }
 }

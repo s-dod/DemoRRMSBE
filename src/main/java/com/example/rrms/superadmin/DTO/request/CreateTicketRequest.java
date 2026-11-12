@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+import java.util.List;
 import java.util.UUID;
 
 public record CreateTicketRequest(
@@ -28,6 +29,13 @@ public record CreateTicketRequest(
         TicketPriority priority,
 
         @NotBlank(message = "Description is required")
-        String description
+        String description,
+
+        List<TicketAttachmentInput> attachments
 ) {
+    public CreateTicketRequest(String tenantCode, String resortName, String ownerName, String ownerEmail,
+                               UUID creatorId, String title, TicketCategory category,
+                               TicketPriority priority, String description) {
+        this(tenantCode, resortName, ownerName, ownerEmail, creatorId, title, category, priority, description, List.of());
+    }
 }
